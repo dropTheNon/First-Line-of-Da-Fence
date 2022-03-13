@@ -16,7 +16,9 @@ const userSchema = new Schema(
       enum: ["Admin", "Estimator", "Foreman", "Helper"],
       default: "Helper",
       required: true,
-    }
+    },
+    leads: [{ type: Schema.Types.ObjectId, ref: "Lead" }],
+    projects: [{ type: Schema.Types.ObjectId, ref: "Project" }],
   },
   {
     timestamps: true,

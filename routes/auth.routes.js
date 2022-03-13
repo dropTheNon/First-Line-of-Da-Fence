@@ -11,7 +11,7 @@ const SALT_ROUNDS = 10;
 const User = require("../models/User.model");
 
 router.post("/signup", (req, res, next) => {
-  const { username, password } = req.body;
+  const { username, password, level } = req.body;
 
   if (!username || !password) {
     res.status(400).json({ message: "Provide username and password" });
@@ -39,6 +39,7 @@ router.post("/signup", (req, res, next) => {
         //     ^
         //     |            |--> this is placeholder (how we named returning value from the previous method (.hash()))
         password: hashedPassword,
+        level,
       });
     })
     .then((userFromDB) => {
