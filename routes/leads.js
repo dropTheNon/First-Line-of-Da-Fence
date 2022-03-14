@@ -16,7 +16,14 @@ router.get("/", levelCheck, (req, res, next) => {
     if (!req.user) {
         return res.status(403).json({ message: "Not logged in" });
     }
-    res.status(200).json({ message: "leads router working!" });
+
+    Lead.find()
+        .then((leadsFromDB) => {
+            res.status(200).json({ leadsFromDB });
+        })
+        .catch((err) => {
+            res.status(500).json({ message: err} );
+        });
 
     // Create & call React form to let users view & create new leads
 });
