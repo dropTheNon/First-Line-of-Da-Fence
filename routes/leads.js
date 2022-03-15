@@ -25,7 +25,13 @@ router.get("/", levelCheck, (req, res, next) => {
             res.status(500).json({ message: err} );
         });
 
-    // Create & call React form to let users view & create new leads
+    // Build React form to let users view Leads & button to CREATE new Lead
+});
+
+// GET route for form to CREATE new Lead
+router.get("/create", levelCheck, (req, res, next) => {
+    res.status(200).json({ message: "GET-ting /create route!" });
+    // Build React form to let users create new leads
 });
 
 // POST route to CREATE new Lead
@@ -66,7 +72,7 @@ router.post("/create", levelCheck, (req, res, next) => {
         })
         .catch((err) => {
             res.status(500).json({ error: err });
-        })
+        });
 });
 
 // GET individual Lead to READ
@@ -81,17 +87,17 @@ router.get("/lead/:leadId", levelCheck, (req, res, next) => {
         });
 })
 
-// GET individual Lead to UPDATE
-router.get("/update/:leadId", levelCheck, (req, res, next) => {
-    Lead.findById(req.params.leadId)
-        .then((leadFromDB) => {
-            res.status(200).json({ leadFromDB });
-            // Display React form to update this Lead
-        })
-        .catch((err) => {
-            res.status(500).json({ message: err });
-        });
-})
+// GET individual Lead to UPDATE *** No need for this? Edit straight from ^^ this one ^^??
+// router.get("/update/:leadId", levelCheck, (req, res, next) => {
+//     Lead.findById(req.params.leadId)
+//         .then((leadFromDB) => {
+//             res.status(200).json({ leadFromDB });
+//             // Display React form to update this Lead
+//         })
+//         .catch((err) => {
+//             res.status(500).json({ message: err });
+//         });
+// })
 
 // POST route to UPDATE individual Lead
 router.post("/update/:leadId", levelCheck, (req, res, next) => {

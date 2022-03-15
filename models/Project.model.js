@@ -3,19 +3,27 @@ const { Schema, model } = require("mongoose");
 const projectSchema = new Schema(
   {
     number: {
-        type: Number,
-        required: true.valueOf,
+        type: String,
+        required: true,
     },
+    createdBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     crewForeman: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    estimateAppointment: [{ type: Schema.Types.ObjectId, ref: "Appointments" }],
     estimator: [{ type: Schema.Types.ObjectId, ref: "User" }],
     files: [{ type: String }],
     jobStatus: {
         type: String,
         enum: ["Set-up", "Being Reviewed", "Awaiting Materials", "Awaiting Scheduling", "Cancelled", "Ready", "On-Hold", "In-Progress", "Completed"],
+        default: "Set-up",
     },
     lead: [{ type: Schema.Types.ObjectId, ref: "Lead" }],
-    materialsReady: Boolean,
+    materialsReady: {
+        type: Boolean,
+        default: false,
+    },
+    needsMFL: {
+        type: Boolean,
+        default: true,
+    },
     notes: String,
   },
   {

@@ -25,6 +25,7 @@ const leadSchema = new Schema(
         type: Number,
         required: true,
     },
+    projects: [{ type: Schema.Types.ObjectId, ref: "Project" }],
   },
   {
     timestamps: true,
