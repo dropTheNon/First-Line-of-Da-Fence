@@ -14,14 +14,14 @@ router.post("/signup", (req, res, next) => {
   const { username, password, level } = req.body;
 
   if (!username || !password) {
-    res.status(400).json({ message: "Provide username and password" });
+    res.json({ message: "Provide username and password" });
     return;
   }
 
   // make sure passwords are strong:
   const regex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
   if (!regex.test(password)) {
-    res.status(500).json({
+    res.json({
       errorMessage:
         "Password needs to have at least 6 chars and must contain at least one number, one lowercase and one uppercase letter.",
     });
@@ -44,15 +44,24 @@ router.post("/signup", (req, res, next) => {
     })
     .then((userFromDB) => {
       console.log("Newly created user is: ", userFromDB);
+      req.login(userFromDB, (err) => {
+        if (err) {
+          res.json({ message: "Session save went bad." });
+          return;
+        }
+  
+        // We are now logged in (that's why we can also send req.user)
+        res.json(userFromDB);
+      });
       // Send the user's information to the frontend
-      // We can use also: res.status(200).json(req.user);
-      res.status(200).json(userFromDB);
+      // We can use also: res.json(req.user);
+      // res.json(userFromDB);
     })
     .catch((error) => {
       if (error instanceof mongoose.Error.ValidationError) {
-        res.status(500).json({ errorMessage: error.message });
+        res.json({ errorMessage: error.message });
       } else if (error.code === 11000) {
-        res.status(500).json({
+        res.json({
           errorMessage:
             "Username and email need to be unique. Either username or email is already used.",
         });
@@ -65,28 +74,26 @@ router.post("/signup", (req, res, next) => {
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", (err, theUser, failureDetails) => {
     if (err) {
-      res
-        .status(500)
-        .json({ message: "Something went wrong authenticating user" });
+      res.json({ message: "Something went wrong authenticating user" });
       return;
     }
 
     if (!theUser) {
       // "failureDetails" contains the error messages
       // from our logic in "LocalStrategy" { message: '...' }.
-      res.status(401).json(failureDetails);
+      res.json(failureDetails);
       return;
     }
 
     // save user in session
     req.login(theUser, (err) => {
       if (err) {
-        res.status(500).json({ message: "Session save went bad." });
+        res.json({ message: "Session save went bad." });
         return;
       }
 
       // We are now logged in (that's why we can also send req.user)
-      res.status(200).json(theUser);
+      res.json(theUser);
     });
   })(req, res, next);
 });
@@ -94,16 +101,16 @@ router.post("/login", (req, res, next) => {
 router.post("/logout", (req, res, next) => {
   // req.logout() is defined by passport
   req.logout();
-  res.status(200).json({ message: "Log out success!" });
+  res.json({ message: "Log out success!" });
 });
 
 router.get("/loggedin", (req, res, next) => {
   // req.isAuthenticated() is defined by passport
   if (req.isAuthenticated()) {
-    res.status(200).json(req.user);
+    res.json(req.user);
     return;
   }
-  res.status(403).json({ message: "Unauthorized" });
+  res.json({ message: "Unauthorized" });
 });
 
 module.exports = router;

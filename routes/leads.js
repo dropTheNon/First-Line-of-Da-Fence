@@ -14,15 +14,18 @@ const levelCheck = require("../middleware/levelCheck");
 // GET all Leads
 router.get("/", levelCheck, (req, res, next) => {
     if (!req.user) {
-        return res.status(403).json({ message: "Not logged in" });
+        return res.json({ message: "Not logged in" });
     }
 
     Lead.find()
         .then((leadsFromDB) => {
-            res.status(200).json({ leadsFromDB });
+            res.json({ 
+                leadsFromDB,
+                message: "All leads from database found!"
+            });
         })
         .catch((err) => {
-            res.status(500).json({ message: err} );
+            res.json({ message: err} );
         });
 
     // Build React form to let users view Leads & button to CREATE new Lead
@@ -30,7 +33,7 @@ router.get("/", levelCheck, (req, res, next) => {
 
 // GET route for form to CREATE new Lead
 router.get("/create", levelCheck, (req, res, next) => {
-    res.status(200).json({ message: "GET-ting /create route!" });
+    res.json({ message: "GET-ting /create route!" });
     // Build React form to let users create new leads
 });
 
@@ -38,6 +41,22 @@ router.get("/create", levelCheck, (req, res, next) => {
 router.post("/create", levelCheck, (req, res, next) => {
     Lead.create(req.body)
         .then((createdLead) => {
+
+            if (req.body.estimator) {
+                User.findByIdAndUpdate(
+                    req.body.estimator,
+                    {
+                        $push: { leads: createdLead._id }
+                    },
+                    { new: true },
+                )
+                .then(() => {
+                    console.log("User updated - lead added!");
+                })
+                .catch((err) => {
+                    res.json({ message: err });
+                });
+            }
             User.findByIdAndUpdate(
                 req.user._id,
                 {
@@ -56,22 +75,22 @@ router.post("/create", levelCheck, (req, res, next) => {
                     { new: true }
                 )
                 .then((updatedLead) => {
-                    res.status(200).json({ 
+                    res.json({ 
                         user: updatedUser,
                         "lead created": updatedLead
                     });
                 })
                 .catch((err) => {
-                    res.status(500).json({ message: err });
+                    res.json({ message: err });
                 });
             })
             .catch((err) => {
-                res.status(500).json({ message: err });
+                res.json({ message: err });
             });
 
         })
         .catch((err) => {
-            res.status(500).json({ error: err });
+            res.json({ error: err });
         });
 });
 
@@ -79,11 +98,11 @@ router.post("/create", levelCheck, (req, res, next) => {
 router.get("/lead/:leadId", levelCheck, (req, res, next) => {
     Lead.findById(req.params.leadId)
         .then((leadFromDB) => {
-            res.status(200).json({ leadFromDB });
+            res.json({ leadFromDB });
             // Create React form to display Lead to User
         })
         .catch((err) => {
-            res.status(500).json({ error: err, message: "Lead not found" });
+            res.json({ error: err, message: "Lead not found" });
         });
 })
 
@@ -91,28 +110,72 @@ router.get("/lead/:leadId", levelCheck, (req, res, next) => {
 // router.get("/update/:leadId", levelCheck, (req, res, next) => {
 //     Lead.findById(req.params.leadId)
 //         .then((leadFromDB) => {
-//             res.status(200).json({ leadFromDB });
+//             res.json({ leadFromDB });
 //             // Display React form to update this Lead
 //         })
 //         .catch((err) => {
-//             res.status(500).json({ message: err });
+//             res.json({ message: err });
 //         });
 // })
 
 // POST route to UPDATE individual Lead
 router.post("/update/:leadId", levelCheck, (req, res, next) => {
-    Lead.findByIdAndUpdate(
-        req.params.leadId,
-        {
-            ...req.body,
-        }
-    )
-    .then((updatedLead) => {
-        res.status(200).json({ updatedLead });
-    })
-    .catch((err) => {
-        res.status(500).json({ message: err });
-    });
+    let currentEstimator;
+    let updateLeadData = {
+        ...req.body,
+    }
+
+    Lead.findById(req.params.leadId)
+        .then((foundLead) => {
+            currentEstimator = foundLead.estimator[0];
+
+            if (updateLeadData.estimator !== currentEstimator) {
+                User.findByIdAndUpdate(
+                    currentEstimator,
+                    {
+                        $pull: { leads: req.params.leadId },
+                    },
+                    {new: true},
+                )
+                .then(() => {
+                    console.log("User updated - lead deleted!");
+                    User.findByIdAndUpdate(
+                        updateLeadData.estimator,
+                        {
+                            $push: { leads: req.params.leadId },
+                        },
+                        {new: true},
+                    )
+                    .then(() => {
+                        console.log("User updated - lead added!");
+                    })
+                    .catch((err) => {
+                        res.json({ message: err });
+                    });
+                })
+                .catch((err) => {
+                    res.json({ message: err });
+                });
+            };
+
+            Lead.findByIdAndUpdate(
+                req.params.leadId,
+                updateLeadData,
+                {new: true}
+            )
+            .then((updatedLead) => {
+                res.json({ 
+                    updatedLead,
+                    message: "Lead successfully updated!" 
+                });
+            })
+            .catch((err) => {
+                res.json({ message: err });
+            });
+        })
+        .catch((err) => {
+            res.json({ message: err });
+        });
 });
 
 // POST route to DELETE individual Lead
@@ -130,14 +193,14 @@ router.post("/delete/:leadId", levelCheck, (req, res, next) => {
 
         Lead.findByIdAndDelete(req.params.leadId)
             .then(() => {
-                res.status(200).json({ message: "Lead deleted!" });
+                res.json({ message: "Lead deleted!" });
             })
             .catch((err) => {
-                res.status(500).json({ message: err });
+                res.json({ message: err });
             });
     })
     .catch((err) => {
-        res.status(500).json({ message: err });
+        res.json({ message: err });
     });
 });
 

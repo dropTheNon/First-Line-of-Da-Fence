@@ -14,19 +14,18 @@ const levelCheck = require("../middleware/levelCheck");
 
 // Declaring Job Number object, for tracking job #s
 const jobNumber = {
-    year: 22,
-    job: 1,
+    year: 22
 };
 
 // GET all Projects
 router.get("/", levelCheck, (req, res, next) => {
     Project.find()
         .then((projectsFromDB) => {
-            res.status(200).json({ projects: projectsFromDB, message: "Projects router working!" });
+            res.json({ projects: projectsFromDB, message: "Projects router working!" });
             // Create React page to display all Projects to User
         })
         .catch((err) => {
-            res.status(500).json({ message: err });
+            res.json({ message: err });
         });
 });
 
@@ -34,14 +33,14 @@ router.get("/", levelCheck, (req, res, next) => {
 router.get("/create", levelCheck, (req, res, next) => {
     Lead.find()
         .then((leadsFromDb) => {
-            res.status(200).json({ 
+            res.json({ 
                 leadsFromDB: leadsFromDb,
                 message: "GET-ting /projects/create form!", 
             });
             // Build React form to CREATE new Project
         })
         .catch((err) => {
-            res.status(500).json({ message: err });
+            res.json({ message: err });
         });
 });
 
@@ -49,13 +48,13 @@ router.get("/create", levelCheck, (req, res, next) => {
 router.get("/project/:projectId", levelCheck, (req, res, next) => {
     Project.findById(req.params.projectId)
         .then((projectFromDb) => {
-            res.status(200).json({
+            res.json({
                 projectFromDb: projectFromDb,
                 message: "Individual project found!"
             });
         })
         .catch((err) => {
-            res.status(500).json({ message: err });
+            res.json({ message: err });
         });
 })
 
@@ -65,127 +64,329 @@ router.post("/create", levelCheck, (req, res, next) => {
         ...req.body,
         createdBy: req.user._id,
     }
-    Lead.create(leadData)
-        .then((createdLead) => {
-            let projectData = {
-                ...req.body,
-                number: `${jobNumber.year}-${jobNumber.job}`,
-                createdBy: req.user._id,
-                lead: createdLead._id,
-            };
-            Project.create(projectData)
-                .then((createdProject) => {
-                    jobNumber.job++;
-                    User.findByIdAndUpdate(
-                        createdProject.estimator[0],
-                        {
-                            $push: { 
-                                leads: createdLead._id,
-                                projects: createdProject._id,
-                            },
-                        },
-                        { new: true }
-                    )
-                        .then(() => {        
-                            Lead.findByIdAndUpdate(
-                                createdLead._id,
+
+    Project.find()
+        .then((allProjects) => {
+            jobNumber.job = allProjects.length + 1;
+
+            Lead.create(leadData)
+                .then((createdLead) => {
+                    let projectData = {
+                        ...req.body,
+                        number: `${jobNumber.year}-${jobNumber.job}`,
+                        createdBy: req.user._id,
+                        lead: createdLead._id,
+                    };
+                    Project.create(projectData)
+                        .then((createdProject) => {
+                            User.findByIdAndUpdate(
+                                createdProject.estimator[0],
                                 {
-                                    $push: { projects: createdProject._id },
+                                    $push: { 
+                                        leads: createdLead._id,
+                                        projects: createdProject._id,
+                                    },
                                 },
                                 { new: true }
                             )
-                                .then(() => {
-                                    res.status(200).json({ 
-                                        createdProject: createdProject,
-                                        message: "Project created!", 
-                                    });
+                                .then(() => {        
+                                    Lead.findByIdAndUpdate(
+                                        createdLead._id,
+                                        {
+                                            $push: { projects: createdProject._id },
+                                        },
+                                        { new: true }
+                                    )
+                                        .then(() => {
+                                            res.json({ 
+                                                createdProject: createdProject,
+                                                message: "Project created!", 
+                                            });
+                                        })
+                                        .catch((err) => {
+                                            res.json({ message: err });
+                                        });
                                 })
                                 .catch((err) => {
-                                    res.status(500).json({ message: err });
+                                    res.json({ message: err });
                                 });
                         })
                         .catch((err) => {
-                            res.status(500).json({ message: err });
+                            res.json({ message: err });
                         });
+        
                 })
                 .catch((err) => {
-                    res.status(500).json({ message: err });
+                    res.json({ error: err });
                 });
-
         })
         .catch((err) => {
-            res.status(500).json({ error: err });
+            res.json({ message: err });
         });
 });
 
 // POST route to CREATE new Project from existing lead
 router.post("/create/:leadId", levelCheck, (req, res, next) => {
-    let projectData = {
-        ...req.body,
-        number: `${jobNumber.year}-${jobNumber.job}`,
-        lead: req.params.leadId,
-        createdBy: req.user._id,
-    };
+    Project.find()
+    .then((allProjects) => {
+        jobNumber.job = allProjects.length + 1;
+        Lead.findById(req.params.leadId)
+        .then((foundLead) => {
+            const projectData = {
+                ...req.body,
+                number: `${jobNumber.year}-${jobNumber.job}`,
+                lead: req.params.leadId,
+                createdBy: req.user._id,
+            };
 
-    Project.create(projectData)
-        .then((createdProject) => {
-            console.log("createdProject: ", createdProject);
-            Lead.findByIdAndUpdate(
-                req.params.leadId,
-                {
-                    $push: { 
-                        projects: createdProject._id, 
-                    },
-                },
-                { new: true },
-            )
-            .then(() => {
+            let currentEstimatorId = foundLead.estimator[0];
+            if (!req.body.estimator) {projectData.estimator = currentEstimatorId;};
+
+            if (req.body.estimator !== currentEstimatorId) {
                 User.findByIdAndUpdate(
-                    createdProject.estimator[0],
+                    currentEstimatorId,
                     {
-                        $push: {
-                            projects: createdProject._id,
-                        }
+                        $pull: { leads: req.params.leadId }
                     },
-                    { new: true },
+                    {new: true},
                 )
                 .then(() => {
-                    res.status(200).json({ 
-                        createdProject: createdProject,
-                        message: "Project created from existing lead!",
+                    console.log("User updated - lead deleted!");
+                    User.findByIdAndUpdate(
+                        req.body.estimator,
+                        {
+                            $push: { leads: req.params.leadId }
+                        },
+                        {new: true},
+                    )
+                    .then(() => {
+                        console.log("User updated - lead added!");
+                        Lead.findByIdAndUpdate(
+                            req.params.leadId,
+                            {
+                                $pull: { users: currentEstimatorId }
+                            },
+                            {new: true},
+                        )
+                        .then(() => {
+                            console.log("Lead updated - user deleted!");
+                            Lead.findByIdAndUpdate(
+                                req.params.leadId,
+                                {
+                                    $push: { users: req.body.estimator }
+                                },
+                                {new: true},
+                            )
+                            .then(() => {
+                                console.log("Lead updated - user added!");
+                            })
+                            .catch((err) => {
+                                res.json({ message: err });
+                            });
+                        })
+                        .catch((err) => {
+                            res.json({ message: err });
+                        });
+                    })
+                    .catch((err) => {
+                        res.json({ message: err });
                     });
                 })
                 .catch((err) => {
-                    res.status(500).json({ message: err });
+                    res.json({ message: err });
                 });
-            })
-            .catch((err) => {
-                res.status(500).json({ message: err });
-            });
+            }
+
+            Project.create(projectData)
+                .then((createdProject) => {
+                    console.log("createdProject: ", createdProject);
+                    Lead.findByIdAndUpdate(
+                        req.params.leadId,
+                        {
+                            $push: { 
+                                projects: createdProject._id, 
+                            },
+                        },
+                        { new: true },
+                    )
+                    .then(() => {
+                        User.findByIdAndUpdate(
+                            createdProject.estimator[0],
+                            {
+                                $push: {
+                                    projects: createdProject._id,
+                                }
+                            },
+                            { new: true },
+                        )
+                        .then(() => {
+                            res.json({ 
+                                createdProject: createdProject,
+                                message: "Project created from existing lead!",
+                            });
+                        })
+                        .catch((err) => {
+                            res.json({ message: err });
+                        });
+                    })
+                    .catch((err) => {
+                        res.json({ message: err });
+                    });
+                })
+                .catch((err) => {
+                    res.json({ message: err });
+                });
         })
         .catch((err) => {
-            res.status(500).json({ message: err });
+            res.json({ message: err });
         });
+    })
+    .catch((err) => {
+        res.json({ message: err });
+    });
+
 });
 
 // POST route to UPDATE a Project
 router.post("/update/:projectId", levelCheck, (req, res, next) => {
-    Project.findByIdAndUpdate(
-        req.params.projectId,
-        {
-           ...req.body, 
-        },
-        { new: true },
-    )
-    .then((updatedProject) => {
-        res.status(200).json({
-            updatedProject: updatedProject,
-            message: "Project updated successfully!",
+    let currentEstimator, currentLead;
+    let updateProjectData = {
+        ...req.body,
+    };
+
+    Project.findById(req.params.projectId)
+        .then((foundProject) => {
+            currentEstimator = foundProject.estimator[0];
+            currentLead = foundProject.lead[0];
+
+            if (updateProjectData.estimator !== currentEstimator) {
+                User.findByIdAndUpdate(
+                    currentEstimator,
+                    {
+                        $pull: { projects: req.params.projectId }
+                    },
+                    { new: true },
+                )
+                .then(() => {
+                    console.log("User updated - project deleted!");
+                    Project.findByIdAndUpdate(
+                        req.params.projectId,
+                        {
+                            $pull: { users: currentEstimator }
+                        },
+                        { new: true },
+                    )
+                    .then(() => {
+                        console.log("Project updated - user deleted!");
+                        User.findByIdAndUpdate(
+                            updateProjectData.estimator,
+                            {
+                                $push: { projects: req.params.projectId }
+                            },
+                            { new: true },
+                        )
+                        .then(() => {
+                            console.log("User updated - project added!");
+
+                            Project.findByIdAndUpdate(
+                                req.params.projectId,
+                                {
+                                    $push: { users: updateProjectData.estimator }
+                                },
+                                { new: true },
+                            )
+                            .then(() => {
+                                console.log("Project updated - user added!");
+                            })
+                            .catch((err) => {
+                                res.json({ message: err });
+                            });
+                        })
+                        .catch((err) => {
+                            res.json({ message: err });
+                        });
+                    })
+                    .catch((err) => {
+                        res.json({ message: err });
+                    });
+                })
+                .catch((err) => {
+                    res.json({ message: err });
+                });
+            };
+
+            if (updateProjectData.lead !== currentLead) {
+                Lead.findByIdAndUpdate(
+                    currentLead,
+                    {
+                        $pull: { projects: req.params.projectId }
+                    },
+                    { new: true },
+                )
+                .then(() => {
+                    console.log("Lead updated - project deleted!");
+                    Project.findByIdAndUpdate(
+                        req.params.projectId,
+                        {
+                            $pull: { leads: currentLead }
+                        },
+                        { new: true },
+                    )
+                    .then(() => {
+                        console.log("Project updated - lead deleted!");
+                        Lead.findByIdAndUpdate(
+                            updateProjectData.lead,
+                            {
+                                $push: { projects: req.params.projectId }
+                            },
+                            { new: true },
+                        )
+                        .then(() => {
+                            console.log("Lead updated - project added!")
+                            Project.findByIdAndUpdate(
+                                req.params.projectId,
+                                {
+                                    $push: { leads: updatedProjectData.lead }
+                                },
+                                { new: true },
+                            )
+                            .then(() => {
+                                console.log("Project updated - lead added!");
+                            })
+                            .catch((err) => {
+                                res.json({ message: err });
+                            });
+                        })
+                        .catch((err) => {
+                            res.json({ message: err });
+                        });
+                    })
+                    .catch((err) => {
+                        res.json({ message: err });
+                    });
+                })
+                .catch((err) => {
+                    res.json({ message: err });
+                });
+            }
+
+            Project.findByIdAndUpdate(
+                req.params.projectId, updateProjectData,
+                { new: true },
+            )
+                .then((updatedProject) => {
+                    res.json({
+                        updatedProject: updatedProject,
+                        message: "Project updated successfully!",
+                    });
+                })
+                .catch((err) => {
+                    res.json({ message: err });
+                });
+        })
+        .catch((err) => {
+            res.json({ message: err });
         });
-    })
-    .catch((err) => {
-        res.status(500).json({ message: err });
-    });
 });
 
 // POST route to DELETE a Project
@@ -214,22 +415,22 @@ router.post("/delete/:projectId", levelCheck, (req, res, next) => {
                 .then(() => {
                     Project.findByIdAndDelete(req.params.projectId)
                         .then(() => {
-                            res.status(200).json({ message: "Project successfully deleted!" });
+                            res.json({ message: "Project successfully deleted!" });
                         })
                         .catch((err) => {
-                            res.status(500).json({ message: err });
+                            res.json({ message: err });
                         });
                 })
                 .catch((err) => {
-                    res.status(500).json({ message: err });
+                    res.json({ message: err });
                 });
             })
             .catch((err) => {
-                res.status(500).json({ message: err });
+                res.json({ message: err });
             });
         })
         .catch((err) => {
-            res.status(500).json({ message: err });
+            res.json({ message: err });
         });
 });
 
