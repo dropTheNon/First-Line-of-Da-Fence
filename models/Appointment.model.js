@@ -2,7 +2,9 @@ const { Schema, model } = require("mongoose");
 
 const appointmentSchema = new Schema(
   {
-    date: Date,
+    subject: String,
+    startTime: Date,
+    endTime: Date,
     estimator: [{ type: Schema.Types.ObjectId, ref: "User" }],
     lead: [{ type: Schema.Types.ObjectId, ref: "Lead" }],
     files: [{ type: String }],
