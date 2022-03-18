@@ -17,8 +17,10 @@ const userSchema = new Schema(
       default: "Helper",
       required: true,
     },
+    changeLog: [{ type: String }],
     leads: [{ type: Schema.Types.ObjectId, ref: "Lead" }],
     projects: [{ type: Schema.Types.ObjectId, ref: "Project" }],
+    token: Schema.Types.Mixed,
   },
   {
     timestamps: true,

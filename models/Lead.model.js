@@ -14,6 +14,7 @@ const leadSchema = new Schema(
     billingAddressCity: String,
     billingAddressState: String,
     billingAddressZipcode: Number,
+    changeLog: [{ type: String }],
     contactName: String,
     createdBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     emailAddress: String,

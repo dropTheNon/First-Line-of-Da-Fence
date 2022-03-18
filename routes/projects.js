@@ -155,7 +155,7 @@ router.post("/create/:leadId", levelCheck, (req, res, next) => {
                     User.findByIdAndUpdate(
                         req.body.estimator,
                         {
-                            $push: { leads: req.params.leadId }
+                            $push: { leads: req.params.leadId },
                         },
                         {new: true},
                     )
@@ -164,7 +164,7 @@ router.post("/create/:leadId", levelCheck, (req, res, next) => {
                         Lead.findByIdAndUpdate(
                             req.params.leadId,
                             {
-                                $pull: { users: currentEstimatorId }
+                                $pull: { users: currentEstimatorId },
                             },
                             {new: true},
                         )
@@ -173,7 +173,7 @@ router.post("/create/:leadId", levelCheck, (req, res, next) => {
                             Lead.findByIdAndUpdate(
                                 req.params.leadId,
                                 {
-                                    $push: { users: req.body.estimator }
+                                    $push: { users: req.body.estimator },
                                 },
                                 {new: true},
                             )

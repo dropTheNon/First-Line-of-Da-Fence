@@ -7,6 +7,7 @@ var logger = require("morgan");
 const mongoose = require("mongoose");
 
 var indexRouter = require("./routes/index");
+var adminRouter = require("./routes/admin");
 var usersRouter = require("./routes/users");
 var authRouter = require("./routes/auth.routes");
 var leadsRouter = require("./routes/leads");
@@ -53,6 +54,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
+app.use("/admin", adminRouter);
 app.use("/users", usersRouter);
 app.use("/api/auth", authRouter);
 app.use("/leads", leadsRouter);
