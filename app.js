@@ -1,3 +1,5 @@
+require("dotenv/config");
+
 var createError = require("http-errors");
 var express = require("express");
 var path = require("path");
@@ -80,7 +82,7 @@ app.use(function (err, req, res, next) {
 });
 
 mongoose
-  .connect("mongodb://localhost/backend-api")
+  .connect(process.env.MONGODB_URI || "mongodb://localhost/backend-api")
   .then((x) => {
     console.log(
       `Connected to Mongo! Database name: "${x.connections[0].name}"`
