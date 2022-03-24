@@ -13,6 +13,7 @@ var authRouter = require("./routes/auth.routes");
 var leadsRouter = require("./routes/leads");
 var projectsRouter = require("./routes/projects");
 var appointmentsRouter = require("./routes/appointments");
+var oAuthRouter = require("./routes/oauth");
 
 const cors = require("cors");
 
@@ -60,6 +61,7 @@ app.use("/api/auth", authRouter);
 app.use("/leads", leadsRouter);
 app.use("/projects", projectsRouter);
 app.use("/appointments", appointmentsRouter);
+app.use("/oauth", oAuthRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
