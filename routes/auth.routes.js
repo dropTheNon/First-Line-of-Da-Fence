@@ -108,7 +108,10 @@ router.get("/loggedin", (req, res, next) => {
   // req.isAuthenticated() is defined by passport
   if (req.isAuthenticated()) {
     res.json(req.user);
-    return;
+    return {
+      user: req.user,
+      message: "Authorized"
+    }
   }
   res.json({ message: "Unauthorized" });
 });

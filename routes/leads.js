@@ -39,7 +39,13 @@ router.get("/create", levelCheck, (req, res, next) => {
 
 // POST route to CREATE new Lead
 router.post("/create", levelCheck, (req, res, next) => {
-    Lead.create(req.body)
+    
+    let newLead = {};
+    Object.keys(req.body).forEach((prop) => {
+      if (req.body[prop]) { newLead[prop] = req.body[prop]; }
+    });
+
+    Lead.create(newLead)
         .then((createdLead) => {
 
             if (req.body.estimator) {
@@ -98,7 +104,7 @@ router.post("/create", levelCheck, (req, res, next) => {
 router.get("/lead/:leadId", levelCheck, (req, res, next) => {
     Lead.findById(req.params.leadId)
         .then((leadFromDB) => {
-            res.json({ leadFromDB });
+            return ({ leadFromDB });
             // Create React form to display Lead to User
         })
         .catch((err) => {
@@ -164,7 +170,7 @@ router.post("/update/:leadId", levelCheck, (req, res, next) => {
                 {new: true}
             )
             .then((updatedLead) => {
-                res.json({ 
+                return ({ 
                     updatedLead,
                     message: "Lead successfully updated!" 
                 });
