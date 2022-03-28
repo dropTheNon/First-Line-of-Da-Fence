@@ -13,19 +13,22 @@ const Project = require("../models/Project.model");
 const adminCheck = require("../middleware/adminCheck");
 
 router.get("/", adminCheck, (req, res, next) => {
+    console.log("Route for /admin/ working!");
     User.find()
         .then((usersFromDb) => {
-            res.json({
+            console.log("usersFromDB on backend: ", usersFromDb);
+            res.json ({
                 usersFromDb,
                 message: "Admin route working!",
             });
         })
         .catch((err) => {
+            console.log(err.message);
             res.json({ message: err });
         });
 });
 
-router.post("/update/:userId", adminCheck, (req, res, next) => {
+router.post("/update/user/:userId", adminCheck, (req, res, next) => {
     User.findByIdAndUpdate(
         req.params.userId,
         {
@@ -34,10 +37,20 @@ router.post("/update/:userId", adminCheck, (req, res, next) => {
         {new: true},
     )
     .then((updatedUser) => {
-        res.json({ 
+        return ({ 
             updatedUser,
             message: "User successfully updated!",
         });
+    })
+    .catch((err) => {
+        res.json({ message: err });
+    });
+});
+
+router.post("/delete/user/:userId", adminCheck, (req, res, next) => {
+    User.findByIdAndDelete(req.params.userId)
+    .then(() => {
+        console.log("User deleted");
     })
     .catch((err) => {
         res.json({ message: err });

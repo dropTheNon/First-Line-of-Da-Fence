@@ -11,10 +11,11 @@ const SALT_ROUNDS = 10;
 const User = require("../models/User.model");
 
 router.post("/signup", (req, res, next) => {
-  const { username, password, level } = req.body;
+  console.log("req.body: ", req.body)
+  const { username, password, name, level } = req.body;
 
-  if (!username || !password) {
-    res.json({ message: "Provide username and password" });
+  if (!username || !password || !name) {
+    res.json({ message: "Provide username, name, and password" });
     return;
   }
 
@@ -35,6 +36,7 @@ router.post("/signup", (req, res, next) => {
       return User.create({
         // username: username
         username,
+        name,
         // password => this is the key from the User model
         //     ^
         //     |            |--> this is placeholder (how we named returning value from the previous method (.hash()))
@@ -107,7 +109,7 @@ router.post("/logout", (req, res, next) => {
 router.get("/loggedin", (req, res, next) => {
   // req.isAuthenticated() is defined by passport
   if (req.isAuthenticated()) {
-    res.json(req.user);
+    console.log(req.user);
     return {
       user: req.user,
       message: "Authorized"

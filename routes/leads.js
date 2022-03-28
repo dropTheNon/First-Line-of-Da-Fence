@@ -48,52 +48,52 @@ router.post("/create", levelCheck, (req, res, next) => {
     Lead.create(newLead)
         .then((createdLead) => {
 
-            if (req.body.estimator) {
-                User.findByIdAndUpdate(
-                    req.body.estimator,
-                    {
-                        $push: { leads: createdLead._id }
-                    },
-                    { new: true },
-                )
-                .then(() => {
-                    console.log("User updated - lead added!");
-                })
-                .catch((err) => {
-                    res.json({ message: err });
-                });
-            }
-            User.findByIdAndUpdate(
-                req.user._id,
-                {
-                    $push: { leads: createdLead._id },
-                },
-                { new: true }
-            )
-            .then((updatedUser) => {
-                req.user = updatedUser;
+            // if (req.body.estimator) {
+            //     User.findByIdAndUpdate(
+            //         req.body.estimator,
+            //         {
+            //             $push: { leads: createdLead._id }
+            //         },
+            //         { new: true },
+            //     )
+            //     .then(() => {
+            //         console.log("User updated - lead added!");
+            //     })
+            //     .catch((err) => {
+            //         res.json({ message: err });
+            //     });
+            // }
+            // User.findByIdAndUpdate(
+            //     req.user._id,
+            //     {
+            //         $push: { leads: createdLead._id },
+            //     },
+            //     { new: true }
+            // )
+            // .then((updatedUser) => {
+            //     req.user = updatedUser;
 
-                Lead.findByIdAndUpdate(
-                    createdLead._id,
-                    {
-                        $push: { createdBy: req.user._id },
-                    },
-                    { new: true }
-                )
-                .then((updatedLead) => {
-                    res.json({ 
-                        user: updatedUser,
-                        "lead created": updatedLead
-                    });
-                })
-                .catch((err) => {
-                    res.json({ message: err });
-                });
-            })
-            .catch((err) => {
-                res.json({ message: err });
-            });
-
+            //     Lead.findByIdAndUpdate(
+            //         createdLead._id,
+            //         {
+            //             $push: { createdBy: req.user._id },
+            //         },
+            //         { new: true }
+            //     )
+            //     .then((updatedLead) => {
+            //         res.json({ 
+            //             user: updatedUser,
+            //             "lead created": updatedLead
+            //         });
+            //     })
+            //     .catch((err) => {
+            //         res.json({ message: err });
+            //     });
+            // })
+            // .catch((err) => {
+            //     res.json({ message: err });
+            // });
+            res.json({createdLead});
         })
         .catch((err) => {
             res.json({ error: err });
@@ -104,8 +104,7 @@ router.post("/create", levelCheck, (req, res, next) => {
 router.get("/lead/:leadId", levelCheck, (req, res, next) => {
     Lead.findById(req.params.leadId)
         .then((leadFromDB) => {
-            return ({ leadFromDB });
-            // Create React form to display Lead to User
+            res.json({leadFromDB});
         })
         .catch((err) => {
             res.json({ error: err, message: "Lead not found" });
@@ -126,43 +125,47 @@ router.get("/lead/:leadId", levelCheck, (req, res, next) => {
 
 // POST route to UPDATE individual Lead
 router.post("/update/:leadId", levelCheck, (req, res, next) => {
+    console.log("leads/update/:leadId called in backend");
+    
     let currentEstimator;
-    let updateLeadData = {
-        ...req.body,
-    }
+    
+    let updateLeadData = {};
+    Object.keys(req.body).forEach((prop) => {
+      if (req.body[prop]) { updateLeadData[prop] = req.body[prop]; }
+    });
 
-    Lead.findById(req.params.leadId)
-        .then((foundLead) => {
-            currentEstimator = foundLead.estimator[0];
+    // Lead.findById(req.params.leadId)
+    //     .then((foundLead) => {
+            // currentEstimator = foundLead.estimator[0];
 
-            if (updateLeadData.estimator !== currentEstimator) {
-                User.findByIdAndUpdate(
-                    currentEstimator,
-                    {
-                        $pull: { leads: req.params.leadId },
-                    },
-                    {new: true},
-                )
-                .then(() => {
-                    console.log("User updated - lead deleted!");
-                    User.findByIdAndUpdate(
-                        updateLeadData.estimator,
-                        {
-                            $push: { leads: req.params.leadId },
-                        },
-                        {new: true},
-                    )
-                    .then(() => {
-                        console.log("User updated - lead added!");
-                    })
-                    .catch((err) => {
-                        res.json({ message: err });
-                    });
-                })
-                .catch((err) => {
-                    res.json({ message: err });
-                });
-            };
+            // if (updateLeadData.estimator !== currentEstimator) {
+            //     User.findByIdAndUpdate(
+            //         currentEstimator,
+            //         {
+            //             $pull: { leads: req.params.leadId },
+            //         },
+            //         {new: true},
+            //     )
+            //     .then(() => {
+            //         console.log("User updated - lead deleted!");
+            //         User.findByIdAndUpdate(
+            //             updateLeadData.estimator,
+            //             {
+            //                 $push: { leads: req.params.leadId },
+            //             },
+            //             {new: true},
+            //         )
+            //         .then(() => {
+            //             console.log("User updated - lead added!");
+            //         })
+            //         .catch((err) => {
+            //             res.json({ message: err });
+            //         });
+            //     })
+            //     .catch((err) => {
+            //         res.json({ message: err });
+            //     });
+            // };
 
             Lead.findByIdAndUpdate(
                 req.params.leadId,
@@ -170,7 +173,7 @@ router.post("/update/:leadId", levelCheck, (req, res, next) => {
                 {new: true}
             )
             .then((updatedLead) => {
-                return ({ 
+                res.json ({ 
                     updatedLead,
                     message: "Lead successfully updated!" 
                 });
@@ -178,10 +181,10 @@ router.post("/update/:leadId", levelCheck, (req, res, next) => {
             .catch((err) => {
                 res.json({ message: err });
             });
-        })
-        .catch((err) => {
-            res.json({ message: err });
-        });
+        // })
+        // .catch((err) => {
+        //     res.json({ message: err });
+        // });
 });
 
 // POST route to DELETE individual Lead
