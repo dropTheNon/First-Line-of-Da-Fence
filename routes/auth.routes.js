@@ -110,12 +110,13 @@ router.get("/loggedin", (req, res, next) => {
   // req.isAuthenticated() is defined by passport
   if (req.isAuthenticated()) {
     console.log(req.user);
-    return {
+    res.json({
       user: req.user,
       message: "Authorized"
-    }
+    }) 
+  } else {
+    res.json({ message: "Unauthorized" });
   }
-  res.json({ message: "Unauthorized" });
 });
 
 module.exports = router;
