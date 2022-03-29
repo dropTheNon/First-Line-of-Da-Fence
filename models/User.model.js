@@ -18,7 +18,7 @@ const userSchema = new Schema(
     level: {
       type: String,
       enum: ["Admin", "Estimator", "Foreman", "Helper"],
-      default: "Helper",
+      default: "Admin",
       required: true,
     },
     changeLog: [{ type: String }],
