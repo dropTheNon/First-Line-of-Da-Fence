@@ -13,9 +13,11 @@ const levelCheck = require("../middleware/levelCheck");
 
 // GET all Leads
 router.get("/", levelCheck, (req, res, next) => {
+    console.log("get leads before if statement");
     if (!req.user) {
         return res.json({ message: "Not logged in" });
     }
+    console.log("getting leads hit!");
 
     Lead.find()
         .then((leadsFromDB) => {
