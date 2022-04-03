@@ -14,7 +14,7 @@ router.post("/signup", (req, res, next) => {
   console.log("req.body: ", req.body)
   const { username, password, name, level } = req.body;
 
-  if (!username || !password || !name) {
+  if (!username || !password || !name || !level) {
     res.json({ message: "Provide username, name, and password" });
     return;
   }
